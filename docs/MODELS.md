@@ -111,7 +111,7 @@ correctly predicted movement signs relative to the anchor:
 
 $$
 \mathrm{DIR} = \frac{100}{n}\sum_{i=1}^{n}
-\mathbf{1}\!\left[\operatorname{sign}(y_i-p_i)=\operatorname{sign}(\hat y_i-p_i)\right].
+\mathbf{1}\left[\,\mathrm{sign}(y_i-p_i)=\mathrm{sign}(\hat y_i-p_i)\,\right].
 $$
 
 ---
