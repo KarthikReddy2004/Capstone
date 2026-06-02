@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Adaptive Dual-Phase PSO-GWO Forecasting Lab</title>
+<script src="/static/vendor/plotly.min.js" charset="utf-8"></script>
+<style>
+:root{
+  --bg:#0b0f17; --panel:#121826; --panel-2:#0e1420; --line:#1f2a3d; --line-2:#2a3850;
+  --text:#e6edf6; --muted:#8a99b3; --accent:#4f8cff; --accent-2:#22d3ee;
+  --good:#34d399; --bad:#f87171; --warn:#fbbf24; --gold:#f5b942;
+  --flagship:#a855f7; --chip:#192234; --shadow:0 8px 30px rgba(0,0,0,.35);
+}
+html[data-theme="light"]{
+  --bg:#f4f6fb; --panel:#ffffff; --panel-2:#f7f9fd; --line:#e3e8f2; --line-2:#d3dbeb;
+  --text:#101828; --muted:#5b6677; --accent:#2563eb; --accent-2:#0891b2;
+  --good:#059669; --bad:#dc2626; --warn:#d97706; --gold:#c98a14;
+  --flagship:#7c3aed; --chip:#eef2fa; --shadow:0 8px 30px rgba(20,30,60,.08);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+.mono{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace}
+a{color:var(--accent)}
+.wrap{max-width:1480px;margin:0 auto;padding:20px}
+header{display:flex;align-items:center;gap:16px;padding:14px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);z-index:50}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--flagship));display:grid;place-items:center;font-weight:800;color:#fff}
+.brand h1{font-size:16px;margin:0;font-weight:700;letter-spacing:.2px}
+.brand .sub{font-size:11px;color:var(--muted)}
+.spacer{flex:1}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--panel);font-size:12px;color:var(--muted)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.dot.on{background:var(--good);box-shadow:0 0 8px var(--good)}
+.dot.run{background:var(--warn);animation:pulse 1s infinite}
+.dot.err{background:var(--bad)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.btn{border:1px solid var(--line-2);background:var(--panel);color:var(--text);padding:9px 16px;border-radius:9px;cursor:pointer;font-weight:600;font-size:13px;transition:.15s;display:inline-flex;align-items:center;gap:7px}
+.btn:hover{border-color:var(--accent);transform:translateY(-1px)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#3b6fd6);border-color:transparent;color:#fff}
+.btn-accent{background:linear-gradient(135deg,var(--flagship),#7c3aed);border-color:transparent;color:#fff}
+.btn-ghost{background:transparent}
+.icon-btn{width:38px;height:38px;padding:0;justify-content:center}
+.grid{display:grid;gap:16px}
+.cols-3{grid-template-columns:1.1fr 1.3fr .9fr}
+@media(max-width:1100px){.cols-3{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow)}
+.card h3{margin:0 0 12px;font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:700}
+.field{margin-bottom:10px}
+.field label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
+.field input,.field select{width:100%;padding:9px 11px;border:1px solid var(--line-2);border-radius:9px;background:var(--panel-2);color:var(--text);font-size:13px}
+.row{display:flex;gap:10px}.row>*{flex:1}
+.data-strip{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin:16px 0}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:12px}
+.stat .v{font-size:18px;font-weight:700}
+.stat .l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.progress{height:8px;border-radius:99px;background:var(--panel-2);overflow:hidden;border:1px solid var(--line);margin:10px 0 6px}
+.progress>div{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent-2));transition:width .3s}
+.board{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.mc{background:var(--panel-2);border:1px solid var(--line);border-radius:11px;padding:11px;font-size:12px;position:relative;overflow:hidden}
+.mc .nm{font-weight:600;font-size:12px;margin-bottom:7px;min-height:32px}
+.mc .st{font-size:11px;color:var(--muted)}
+.mc .mt{display:flex;justify-content:space-between;margin-top:7px;font-size:11px}
+.mc.flagship{border-color:var(--flagship);box-shadow:0 0 0 1px var(--flagship) inset}
+.mc.done{border-color:var(--good)}
+.mc.running{border-color:var(--warn)}
+.mc.error{border-color:var(--bad)}
+.mc .bar{position:absolute;left:0;bottom:0;height:3px;background:var(--accent);transition:width .3s}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 14px;border-bottom:1px solid var(--line);padding-bottom:0}
+.tab{padding:9px 15px;border-radius:9px 9px 0 0;cursor:pointer;font-weight:600;font-size:13px;color:var(--muted);border:1px solid transparent;border-bottom:none}
+.tab.active{color:var(--text);background:var(--panel);border-color:var(--line)}
+.plot{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px;margin-bottom:16px}
+.plot.lg{height:460px}.plot.md{height:340px}.plot.sm{height:280px}
+.plot>div{width:100%;height:100%}
+.pgrid{display:grid;gap:16px;grid-template-columns:1fr 1fr}
+@media(max-width:980px){.pgrid{grid-template-columns:1fr}}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+select.sel{padding:8px 11px;border:1px solid var(--line-2);border-radius:9px;background:var(--panel-2);color:var(--text);font-size:13px;min-width:240px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:9px 11px;text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.4px;cursor:pointer;user-select:none;position:sticky;top:0;background:var(--panel)}
+tbody tr:hover{background:var(--panel-2)}
+tr.flagship-row{background:color-mix(in srgb,var(--flagship) 12%,transparent)}
+tr.best-row td{font-weight:700}
+.rankbadge{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;background:var(--chip);font-weight:700;font-size:11px}
+.rankbadge.r1{background:var(--gold);color:#1a1205}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{background:var(--chip);border:1px solid var(--line);border-radius:8px;padding:6px 11px;font-size:12px}
+.chip b{color:var(--accent)}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+.kpi .v{font-size:22px;font-weight:800}
+.kpi .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.kpi.flag{border-color:var(--flagship)}
+.hidden{display:none!important}
+.log{background:#05080f;border:1px solid var(--line);border-radius:10px;padding:11px;height:200px;overflow:auto;font-family:ui-monospace,monospace;font-size:11.5px;color:#9fd0a8}
+html[data-theme="light"] .log{background:#0d1322;color:#bfe9c6}
+.muted{color:var(--muted)}
+.section-title{font-size:18px;font-weight:800;margin:6px 0 2px}
+.toast{position:fixed;bottom:22px;right:22px;background:var(--panel);border:1px solid var(--line-2);border-radius:11px;padding:13px 18px;box-shadow:var(--shadow);transform:translateY(120%);transition:.3s;z-index:100}
+.toast.show{transform:translateY(0)}
+.toast.err{border-color:var(--bad)}.toast.ok{border-color:var(--good)}
+.legend-note{font-size:11px;color:var(--muted);margin:-6px 0 12px}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="logo">Φ</div>
+    <div><h1>Adaptive Dual-Phase PSO-GWO Forecasting Lab</h1>
+    <div class="sub">16-model benchmark · feature selection · expert fusion · publication-grade analytics</div></div>
+  </div>
+  <div class="spacer"></div>
+  <span class="pill"><span class="dot" id="redis-dot"></span><span id="redis-text">connecting…</span></span>
+  <button class="btn icon-btn btn-ghost" id="theme-btn" title="Toggle theme">◐</button>
+</header>
+
+<div class="wrap">
+  <div class="grid cols-3">
+    <div class="card">
+      <h3>① Market Data</h3>
+      <div class="field"><label>Symbol (Yahoo Finance)</label><input id="symbol" value="AAPL" placeholder="AAPL · TSLA · TCS.NS · BTC-USD"></div>
+      <div class="row">
+        <div class="field"><label>Start date</label><input id="start" type="date" value="2018-01-01"></div>
+        <div class="field" style="display:flex;align-items:flex-end"><button class="btn btn-primary" style="width:100%" id="btn-fetch" onclick="fetchData()">Fetch</button></div>
+      </div>
+      <div class="field"><label>… or upload OHLCV CSV</label><input id="csv" type="file" accept=".csv"></div>
+      <button class="btn btn-ghost" style="width:100%" id="btn-upload" onclick="uploadData()">Upload CSV</button>
+    </div>
+
+    <div class="card">
+      <h3>② Optimizer &amp; Validation</h3>
+      <div class="row">
+        <div class="field"><label>Population</label><input id="popSize" type="number" value="12" min="4" max="60"></div>
+        <div class="field"><label>Iterations</label><input id="maxIter" type="number" value="12" min="4" max="120"></div>
+        <div class="field"><label>Effort</label><select id="effort"><option value="fast" selected>Fast</option><option value="balanced">Balanced</option><option value="thorough">Thorough</option><option value="max">Max (deep)</option></select></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>PSO c1</label><input id="c1" type="number" step="0.1" value="1.5"></div>
+        <div class="field"><label>PSO c2</label><input id="c2" type="number" step="0.1" value="2.0"></div>
+        <div class="field"><label>Inertia w</label><input id="w" type="number" step="0.01" value="0.72"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Sequence len</label><input id="seqLen" type="number" value="24" min="12" max="64"></div>
+        <div class="field"><label>Test %</label><input id="testPct" type="number" value="20" min="8" max="40"></div>
+        <div class="field"><label>Seed</label><input id="seed" type="number" value="1337"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>③ Run Benchmark</h3>
+      <p class="muted" style="font-size:12px;margin-top:0">Trains all <b>16 models</b> on one leak-free split: 3 baselines, 9 PSO/GWO/hybrid-optimized learners, 3 Adaptive Dual-Phase models, and the Expert Fusion Ensemble.</p>
+      <button class="btn btn-accent" style="width:100%;justify-content:center;font-size:15px;padding:13px" id="btn-run" disabled onclick="runModels()">▶ Run all 16 models</button>
+      <div class="progress"><div id="prog-bar"></div></div>
+      <div class="muted mono" id="prog-text" style="font-size:11.5px">Waiting for data…</div>
+    </div>
+  </div>
+
+  <div class="data-strip" id="data-strip">
+    <div class="stat"><div class="v" id="d-sym">—</div><div class="l">Symbol</div></div>
+    <div class="stat"><div class="v" id="d-rows">—</div><div class="l">Rows</div></div>
+    <div class="stat"><div class="v" id="d-feat">—</div><div class="l">Features</div></div>
+    <div class="stat"><div class="v" id="d-from">—</div><div class="l">From</div></div>
+    <div class="stat"><div class="v" id="d-to">—</div><div class="l">To</div></div>
+    <div class="stat"><div class="v" id="d-close">—</div><div class="l">Last close</div></div>
+  </div>
+
+  <div class="card hidden" id="live-card" style="margin-top:4px">
+    <h3>Live training board · <span id="stage" class="muted" style="text-transform:none;letter-spacing:0">idle</span></h3>
+    <div class="board" id="board"></div>
+    <details style="margin-top:14px"><summary class="muted" style="cursor:pointer;font-size:12px">Run log</summary><div class="log" id="log"></div></details>
+  </div>
+
+  <div class="hidden" id="results">
+    <div class="toolbar" id="export-bar" style="justify-content:flex-end;margin-bottom:6px">
+      <span class="muted" style="margin-right:auto;font-size:12px">Export the full interactive dashboard for your report ▶</span>
+      <button class="btn" onclick="downloadJSON()">⬇ Data (JSON)</button>
+      <button class="btn btn-primary" onclick="downloadReport()">⬇ Download report (HTML)</button>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="tabs" id="tabs"></div>
+    <div id="tab-body"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>

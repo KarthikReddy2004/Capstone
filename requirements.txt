@@ -1,0 +1,16 @@
+# Core platform dependencies.
+# NOTE: on Linux, `torch` from PyPI defaults to a CUDA build. For a CPU-only
+# install (matching this project's no-GPU design) install torch first from the
+# CPU wheel index, e.g.:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+# The Dockerfile does this automatically.
+flask>=3.0
+numpy>=1.26
+pandas>=2.1
+scikit-learn>=1.4
+scipy>=1.11
+yfinance>=0.2.40
+redis>=5.0
+torch>=2.2
+joblib>=1.3
+waitress>=3.0

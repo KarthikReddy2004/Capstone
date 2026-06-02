@@ -1,0 +1,29 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: stocklab-redis
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  app:
+    build: .
+    container_name: stocklab-app
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      # Point at the bundled Redis service. Override with a managed endpoint by
+      # exporting STOCKLAB_REDIS_URL before `docker compose up`.
+      STOCKLAB_REDIS_URL: ${STOCKLAB_REDIS_URL:-redis://redis:6379/0}
+      STOCKLAB_MAX_WORKERS: ${STOCKLAB_MAX_WORKERS:-2}
+      STOCKLAB_SEED: ${STOCKLAB_SEED:-1337}
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
